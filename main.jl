@@ -18,6 +18,7 @@ end
 
 is_static(x) = true
 is_static(x::Symbol) = false
+is_static(x::QuoteNode) = true
 is_static(ex::Expr) = all(is_static, ex.args)
 
 static_eval(x, ctx::Context) = x
@@ -29,10 +30,16 @@ static_eval(ex::Expr, ctx::Context) = static_eval(ex, Val(ex.head), ctx)
 
 eval_args(ex, ctx) = map(a->static_eval(a, ctx), ex.args)
 
+"QuoteNodes are static but need to be left intact in the case that the Expr that contains them remains an Expr"
+eval_quotenodes(ex) = ex
+eval_quotenodes(q::QuoteNode) = q.value
+eval_quotenodes(exs::Vector) = map(eval_quotenodes, exs)
+
 static_eval(ex, ::Val{:call}, ctx) = begin
   args = eval_args(ex, ctx)
-  all(is_static, args) && return args[1](args[2:end]...)
-  Expr(:call, args...)
+  all(is_static, args) || return Expr(:call, args...)
+  args = eval_quotenodes(args)
+  args[1](args[2:end]...)
 end
 
 static_eval(ex, ::Val{:if}, ctx) = begin
@@ -65,14 +72,14 @@ end
 
 static_eval(ex, ::Val{:vect}, ctx) = begin
   args = eval_args(ex, ctx)
-  all(is_static, args) && return args
-  Expr(:vect, args...)
+  all(is_static, args) || return Expr(:vect, args...)
+  eval_quotenodes(args)
 end
 
 static_eval(ex, ::Val{:tuple}, ctx) = begin
   args = eval_args(ex, ctx)
-  all(is_static, args) && return tuple(args...)
-  Expr(:tuple, args...)
+  all(is_static, args) || return Expr(:tuple, args...)
+  tuple(eval_quotenodes(args)...)
 end
 
 static_eval(expr, mod=@__MODULE__) = static_eval(expr, Context(mod))
