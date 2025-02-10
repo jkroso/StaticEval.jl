@@ -20,7 +20,7 @@ is_static(x) = true
 is_static(x::Symbol) = false
 is_static(x::QuoteNode) = true
 is_static(ex::Expr) = begin
-  Meta.isexpr(ex, :kw, 2) && return is_static(ex.args[2])
+  (Meta.isexpr(ex, :kw, 2) || Meta.isexpr(ex, :(=), 2)) && return is_static(ex.args[2])
   all(is_static, ex.args)
 end
 
@@ -65,8 +65,7 @@ rmlines(exprs) = [x for x in exprs if !(x isa LineNumberNode)]
 
 static_eval(ex, ::Val{:block}, ctx) = begin
   args = rmlines(eval_args(ex, ctx))
-  all(is_static, args) || length(args) == 1 && return args[end]
-  Expr(:block, args...)
+  all(is_static, args) || length(args) == 1 ? args[end] : Expr(:block, args...)
 end
 
 static_eval(ex, ::Val{:let}, ctx) = begin
@@ -77,7 +76,9 @@ end
 
 static_eval(ex, ::Val{:(=)}, ctx) = begin
   var, val = ex.args
-  ctx.dict[var] = static_eval(val, ctx)
+  val = static_eval(val, ctx)
+  ctx.dict[var] = val
+  Expr(:(=), var, val)
 end
 
 static_eval(ex, ::Val{:vect}, ctx) = begin

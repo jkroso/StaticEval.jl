@@ -8,6 +8,7 @@ a=2
 @test 1 == @static_eval if true 1 end
 @test nothing == @static_eval if false 1 end
 @test 3 == @static_eval let a=1;a+2 end
+@test @macroexpand(@static_eval let a=1;a+2 end) == 3
 @test [1,2,3] == @static_eval [1,a,3]
 @test (1,2) == @static_eval (1,2)
 @test static_eval(:(if true d else e end)) == :d
