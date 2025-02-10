@@ -82,6 +82,12 @@ static_eval(ex, ::Val{:tuple}, ctx) = begin
   tuple(eval_quotenodes(args)...)
 end
 
+static_eval(ex, ::Val{:curly}, ctx) = begin
+  args = eval_args(ex, ctx)
+  all(is_static, args) || return Expr(:curly, args...)
+  Meta.eval(Expr(:curly, args...))
+end
+
 static_eval(expr, mod=@__MODULE__) = static_eval(expr, Context(mod))
 
 macro static_eval(ex)

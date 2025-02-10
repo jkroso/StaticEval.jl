@@ -14,3 +14,5 @@ a=2
 @test static_eval(:(if false d else e end)) == :e
 @test static_eval(:(if true d+1 else e end)) == :($+(d,1))
 @test @macroexpand(@static_eval false ? 1 : a+b) == :($+(2,b))
+@test @static_eval(Dict(:a => 1)) == Dict(:a => 1)
+@test @static_eval(Dict{Symbol,Any}(:a => 1)) == Dict(:a => 1)
