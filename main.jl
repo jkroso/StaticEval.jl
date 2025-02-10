@@ -101,7 +101,7 @@ end
 
 static_eval(ex, ::Val{:escape}, ctx) = begin
   @assert Meta.isexpr(ex, :escape, 1)
-  arg = static_eval(ex.args[1])
+  arg = static_eval(ex.args[1], ctx)
   is_static(arg) ? arg : esc(arg)
 end
 
