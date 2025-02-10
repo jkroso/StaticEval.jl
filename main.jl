@@ -98,6 +98,12 @@ static_eval(ex, ::Val{:curly}, ctx) = begin
   Meta.eval(Expr(:curly, args...))
 end
 
+static_eval(ex, ::Val{:escape}, ctx) = begin
+  @assert Meta.isexpr(ex, :escape, 1)
+  arg = static_eval(ex.args[1])
+  is_static(arg) ? arg : esc(arg)
+end
+
 static_eval(expr, mod=@__MODULE__) = static_eval(expr, Context(mod))
 
 macro static_eval(ex)

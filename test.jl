@@ -21,3 +21,4 @@ F(;r::Any) = r
 F(r=1)
 @test @static_eval(F(r=3)) == 3
 @test @static_eval(F(;r=3)) == 3
+@test static_eval(:(1+$(esc(a)))) == 3
