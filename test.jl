@@ -16,3 +16,8 @@ a=2
 @test @macroexpand(@static_eval false ? 1 : a+b) == :($+(2,b))
 @test @static_eval(Dict(:a => 1)) == Dict(:a => 1)
 @test @static_eval(Dict{Symbol,Any}(:a => 1)) == Dict(:a => 1)
+
+F(;r::Any) = r
+F(r=1)
+@test @static_eval(F(r=3)) == 3
+@test @static_eval(F(;r=3)) == 3

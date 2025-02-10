@@ -19,7 +19,10 @@ end
 is_static(x) = true
 is_static(x::Symbol) = false
 is_static(x::QuoteNode) = true
-is_static(ex::Expr) = all(is_static, ex.args)
+is_static(ex::Expr) = begin
+  Meta.isexpr(ex, :kw, 2) && return is_static(ex.args[2])
+  all(is_static, ex.args)
+end
 
 static_eval(x, ctx::Context) = x
 static_eval(s::Symbol, ctx::Context) = begin
@@ -38,8 +41,15 @@ eval_quotenodes(exs::Vector) = map(eval_quotenodes, exs)
 static_eval(ex, ::Val{:call}, ctx) = begin
   args = eval_args(ex, ctx)
   all(is_static, args) || return Expr(:call, args...)
-  args = eval_quotenodes(args)
-  args[1](args[2:end]...)
+  Meta.eval(Expr(:call, args...))
+end
+
+static_eval(ex, ::Val{:kw}, ctx) = begin
+  Expr(:kw, ex.args[1], static_eval(ex.args[2], ctx))
+end
+
+static_eval(ex, ::Val{:parameters}, ctx) = begin
+  Expr(:parameters, eval_args(ex, ctx)...)
 end
 
 static_eval(ex, ::Val{:if}, ctx) = begin
