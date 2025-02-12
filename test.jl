@@ -22,3 +22,7 @@ F(;r::Any) = r
 @test @static_eval(F(r=3)) == 3
 @test @static_eval(F(;r=3)) == 3
 @test static_eval(:(1+$(esc(a)))) == 3
+
+nt = (value="something",)
+@test @macroexpand(@static_eval isempty(t.value) ? "#789" : "black") == :($isempty(t.value) ? "#789" : "black")
+@test @macroexpand(@static_eval isempty(nt.value) ? "#789" : "black") == "black"

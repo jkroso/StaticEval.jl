@@ -81,6 +81,12 @@ static_eval(ex, ::Val{:(=)}, ctx) = begin
   Expr(:(=), var, val)
 end
 
+static_eval(ex, ::Val{:(.)}, ctx) = begin
+  args = eval_args(ex, ctx)
+  ex = Expr(:(.), args...)
+  all(is_static, args) ? Meta.eval(ex) : ex
+end
+
 static_eval(ex, ::Val{:vect}, ctx) = begin
   args = eval_args(ex, ctx)
   all(is_static, args) || return Expr(:vect, args...)
